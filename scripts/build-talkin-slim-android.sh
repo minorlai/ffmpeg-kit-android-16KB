@@ -4,6 +4,19 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${ROOT_DIR}"
 
+print_build_log_on_error() {
+  local exit_code=$?
+  if [[ ${exit_code} -ne 0 && -f "${ROOT_DIR}/build.log" ]]; then
+    echo
+    echo "----- build.log tail -----" >&2
+    tail -300 "${ROOT_DIR}/build.log" >&2
+    echo "----- end build.log tail -----" >&2
+  fi
+  exit "${exit_code}"
+}
+
+trap print_build_log_on_error EXIT
+
 if [[ -z "${ANDROID_SDK_ROOT:-}" ]]; then
   echo "ANDROID_SDK_ROOT is not defined." >&2
   exit 1
