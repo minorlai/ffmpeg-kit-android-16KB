@@ -291,6 +291,7 @@ if [[ -n ${ANDROID_ARCHITECTURES} ]]; then
 
   # COPY EXTERNAL LIBRARY LICENSES
   LICENSE_BASEDIR="${BASEDIR}"/android/ffmpeg-kit-android-lib/src/main/res/raw
+  mkdir -p "${LICENSE_BASEDIR}" 1>>"${BASEDIR}"/build.log 2>&1 || exit 1
   rm -f "${LICENSE_BASEDIR}"/*.txt 1>>"${BASEDIR}"/build.log 2>&1 || exit 1
   for library in {0..49}; do
     if [[ ${ENABLED_LIBRARIES[$library]} -eq 1 ]]; then
