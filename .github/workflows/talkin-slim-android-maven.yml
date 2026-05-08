@@ -75,27 +75,33 @@ jobs:
           MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
           SIGNING_IN_MEMORY_KEY: ${{ secrets.SIGNING_IN_MEMORY_KEY }}
+          SIGNING_IN_MEMORY_KEY_BASE64: ${{ secrets.SIGNING_IN_MEMORY_KEY_BASE64 }}
           SIGNING_IN_MEMORY_KEY_ID: ${{ secrets.SIGNING_IN_MEMORY_KEY_ID }}
           SIGNING_IN_MEMORY_KEY_PASSWORD: ${{ secrets.SIGNING_IN_MEMORY_KEY_PASSWORD }}
         run: |
           python3 - <<'PY'
+          import base64
           import os
           from pathlib import Path
 
           required = [
               "MAVEN_CENTRAL_USERNAME",
               "MAVEN_CENTRAL_PASSWORD",
-              "SIGNING_IN_MEMORY_KEY",
               "SIGNING_IN_MEMORY_KEY_PASSWORD",
           ]
           missing = [name for name in required if not os.environ.get(name)]
           if missing:
               raise SystemExit(f"Missing GitHub secrets: {', '.join(missing)}")
 
-          key = os.environ["SIGNING_IN_MEMORY_KEY"].strip()
-          key = key.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\r\n", "\n")
+          key_base64 = os.environ.get("SIGNING_IN_MEMORY_KEY_BASE64", "").strip()
+          if key_base64:
+              key = base64.b64decode(key_base64).decode("utf-8").strip()
+          else:
+              key = os.environ.get("SIGNING_IN_MEMORY_KEY", "").strip()
+              key = key.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\r\n", "\n")
+
           if "BEGIN PGP PRIVATE KEY BLOCK" not in key:
-              raise SystemExit("SIGNING_IN_MEMORY_KEY must be an ASCII-armored private key block.")
+              raise SystemExit("SIGNING_IN_MEMORY_KEY or SIGNING_IN_MEMORY_KEY_BASE64 must contain an ASCII-armored private key block.")
 
           def prop(value: str) -> str:
               return (
@@ -107,6 +113,9 @@ jobs:
                   .replace("=", "\\=")
               )
 
+          key_file = Path(os.environ["RUNNER_TEMP"]) / "signing-key.asc"
+          key_file.write_text(key + "\n", encoding="utf-8")
+
           gradle_dir = Path.home() / ".gradle"
           gradle_dir.mkdir(parents=True, exist_ok=True)
           props = gradle_dir / "gradle.properties"
@@ -114,12 +123,28 @@ jobs:
               f.write("\n")
               f.write(f"mavenCentralUsername={prop(os.environ['MAVEN_CENTRAL_USERNAME'])}\n")
               f.write(f"mavenCentralPassword={prop(os.environ['MAVEN_CENTRAL_PASSWORD'])}\n")
-              f.write(f"signingInMemoryKey={prop(key)}\n")
               key_id = os.environ.get("SIGNING_IN_MEMORY_KEY_ID", "").strip()
               if key_id:
-                  f.write(f"signingInMemoryKeyId={prop(key_id)}\n")
-              f.write(f"signingInMemoryKeyPassword={prop(os.environ['SIGNING_IN_MEMORY_KEY_PASSWORD'])}\n")
+                  f.write(f"signing.gnupg.keyName={prop(key_id)}\n")
+              f.write("signing.gnupg.executable=gpg\n")
+              f.write("signing.gnupg.useLegacyGpg=false\n")
+              f.write(f"signing.gnupg.passphrase={prop(os.environ['SIGNING_IN_MEMORY_KEY_PASSWORD'])}\n")
           PY
+
+          mkdir -p "${HOME}/.gnupg"
+          chmod 700 "${HOME}/.gnupg"
+          echo "allow-loopback-pinentry" > "${HOME}/.gnupg/gpg-agent.conf"
+          gpgconf --kill gpg-agent || true
+          gpg --batch --import "${RUNNER_TEMP}/signing-key.asc"
+          KEY_NAME="${SIGNING_IN_MEMORY_KEY_ID}"
+          if [ -z "${KEY_NAME}" ]; then
+            KEY_NAME="$(gpg --batch --with-colons --list-secret-keys | awk -F: '/^sec:/ { print $5; exit }')"
+            echo "signing.gnupg.keyName=${KEY_NAME}" >> "${HOME}/.gradle/gradle.properties"
+          fi
+          printf "signing smoke test" > "${RUNNER_TEMP}/signing-smoke.txt"
+          gpg --batch --yes --pinentry-mode loopback --passphrase "${SIGNING_IN_MEMORY_KEY_PASSWORD}" \
+            --local-user "${KEY_NAME}" --armor --detach-sign \
+            --output "${RUNNER_TEMP}/signing-smoke.txt.asc" "${RUNNER_TEMP}/signing-smoke.txt"
 
       - name: publish to maven central
         if: ${{ github.ref == 'refs/tags/v6.1.2' || inputs.publish == 'true' }}
