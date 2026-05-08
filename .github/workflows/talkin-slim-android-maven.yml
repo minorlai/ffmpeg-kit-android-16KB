@@ -43,7 +43,9 @@ jobs:
 
       - name: set up android sdk and ndk
         run: |
+          set +o pipefail
           yes | "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
+          set -o pipefail
           "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" \
             "platforms;android-35" \
             "build-tools;35.0.0" \
