@@ -427,6 +427,8 @@ fi
   --ar="${AR}" \
   --cc="${CC}" \
   --cxx="${CXX}" \
+  --extra-cflags="${CFLAGS}" \
+  --extra-ldflags="${LDFLAGS}" \
   --ranlib="${RANLIB}" \
   --strip="${STRIP}" \
   --nm="${NM}" \
