@@ -1,0 +1,77 @@
+name: talkin slim android maven
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish to Maven Central after the AAR is verified"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+  push:
+    tags:
+      - "v6.1.2"
+
+jobs:
+  build-and-publish:
+    name: build slim 16KB aar
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        shell: bash
+    env:
+      ANDROID_NDK_VERSION: "21.4.7075529"
+      ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+      ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+      ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_IN_MEMORY_KEY }}
+      ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_IN_MEMORY_KEY_ID }}
+      ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_IN_MEMORY_KEY_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: set up jdk 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: set up android sdk and ndk
+        run: |
+          yes | "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
+          "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" \
+            "platforms;android-35" \
+            "build-tools;35.0.0" \
+            "cmake;3.22.1" \
+            "ndk;${ANDROID_NDK_VERSION}"
+          echo "ANDROID_SDK_ROOT=${ANDROID_HOME}" >> "${GITHUB_ENV}"
+          echo "ANDROID_NDK_ROOT=${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}" >> "${GITHUB_ENV}"
+
+      - name: build talkin slim aar
+        run: bash scripts/build-talkin-slim-android.sh --force
+
+      - name: verify talkin slim aar
+        run: bash scripts/verify-talkin-slim-aar.sh
+
+      - name: upload talkin slim aar
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg-kit-talkin-slim-16kb-6.1.2
+          path: ffmpeg-kit-talkin-slim-16kb.aar
+          if-no-files-found: error
+
+      - name: publish to maven central
+        if: ${{ github.ref == 'refs/tags/v6.1.2' || inputs.publish == 'true' }}
+        working-directory: android
+        run: ./gradlew publishAndReleaseToMavenCentral --no-daemon --no-configuration-cache
+
+      - name: print maven coordinates
+        if: ${{ github.ref == 'refs/tags/v6.1.2' || inputs.publish == 'true' }}
+        run: |
+          echo "io.github.minorlai:ffmpeg-kit-16kb:6.1.2"
+          echo "https://central.sonatype.com/artifact/io.github.minorlai/ffmpeg-kit-16kb/6.1.2"
