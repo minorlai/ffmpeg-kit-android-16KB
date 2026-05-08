@@ -24,11 +24,6 @@ jobs:
         shell: bash
     env:
       ANDROID_NDK_VERSION: "27.0.12077973"
-      ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-      ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-      ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_IN_MEMORY_KEY }}
-      ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_IN_MEMORY_KEY_ID }}
-      ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_IN_MEMORY_KEY_PASSWORD }}
 
     steps:
       - uses: actions/checkout@v4
@@ -73,6 +68,58 @@ jobs:
           name: ffmpeg-kit-talkin-slim-16kb-6.1.2
           path: ffmpeg-kit-talkin-slim-16kb.aar
           if-no-files-found: error
+
+      - name: prepare publishing credentials
+        if: ${{ github.ref == 'refs/tags/v6.1.2' || inputs.publish == 'true' }}
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          SIGNING_IN_MEMORY_KEY: ${{ secrets.SIGNING_IN_MEMORY_KEY }}
+          SIGNING_IN_MEMORY_KEY_ID: ${{ secrets.SIGNING_IN_MEMORY_KEY_ID }}
+          SIGNING_IN_MEMORY_KEY_PASSWORD: ${{ secrets.SIGNING_IN_MEMORY_KEY_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          required = [
+              "MAVEN_CENTRAL_USERNAME",
+              "MAVEN_CENTRAL_PASSWORD",
+              "SIGNING_IN_MEMORY_KEY",
+              "SIGNING_IN_MEMORY_KEY_PASSWORD",
+          ]
+          missing = [name for name in required if not os.environ.get(name)]
+          if missing:
+              raise SystemExit(f"Missing GitHub secrets: {', '.join(missing)}")
+
+          key = os.environ["SIGNING_IN_MEMORY_KEY"].strip()
+          key = key.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\r\n", "\n")
+          if "BEGIN PGP PRIVATE KEY BLOCK" not in key:
+              raise SystemExit("SIGNING_IN_MEMORY_KEY must be an ASCII-armored private key block.")
+
+          def prop(value: str) -> str:
+              return (
+                  value
+                  .replace("\\", "\\\\")
+                  .replace("\n", "\\n")
+                  .replace("\r", "")
+                  .replace(":", "\\:")
+                  .replace("=", "\\=")
+              )
+
+          gradle_dir = Path.home() / ".gradle"
+          gradle_dir.mkdir(parents=True, exist_ok=True)
+          props = gradle_dir / "gradle.properties"
+          with props.open("a", encoding="utf-8") as f:
+              f.write("\n")
+              f.write(f"mavenCentralUsername={prop(os.environ['MAVEN_CENTRAL_USERNAME'])}\n")
+              f.write(f"mavenCentralPassword={prop(os.environ['MAVEN_CENTRAL_PASSWORD'])}\n")
+              f.write(f"signingInMemoryKey={prop(key)}\n")
+              key_id = os.environ.get("SIGNING_IN_MEMORY_KEY_ID", "").strip()
+              if key_id:
+                  f.write(f"signingInMemoryKeyId={prop(key_id)}\n")
+              f.write(f"signingInMemoryKeyPassword={prop(os.environ['SIGNING_IN_MEMORY_KEY_PASSWORD'])}\n")
+          PY
 
       - name: publish to maven central
         if: ${{ github.ref == 'refs/tags/v6.1.2' || inputs.publish == 'true' }}
