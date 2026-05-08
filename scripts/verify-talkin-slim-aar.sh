@@ -81,8 +81,18 @@ for abi in arm64-v8a armeabi-v7a; do
   strings "${libavcodec}" | grep -Eq "filter_units|remove_types" || fail "${abi}: filter_units bitstream filter symbols were not found in libavcodec.so"
 
   if [[ -n "${READ_ELF}" ]]; then
-    "${READ_ELF}" -l "${libavcodec}" | awk '/LOAD/ { print $NF }' | grep -Eq "0x4000|16384" || fail "${abi}: libavcodec.so does not show 16KB LOAD alignment"
-    "${READ_ELF}" -l "${abi_dir}/libffmpegkit.so" | awk '/LOAD/ { print $NF }' | grep -Eq "0x4000|16384" || fail "${abi}: libffmpegkit.so does not show 16KB LOAD alignment"
+    avcodec_load_alignments="$("${READ_ELF}" -l "${libavcodec}" | awk '/LOAD/ { print $NF }')"
+    ffmpegkit_load_alignments="$("${READ_ELF}" -l "${abi_dir}/libffmpegkit.so" | awk '/LOAD/ { print $NF }')"
+
+    if ! grep -Eq "0x4000|16384" <<<"${avcodec_load_alignments}"; then
+      "${READ_ELF}" -l "${libavcodec}" | awk '/LOAD/ { print }' >&2
+      fail "${abi}: libavcodec.so does not show 16KB LOAD alignment"
+    fi
+
+    if ! grep -Eq "0x4000|16384" <<<"${ffmpegkit_load_alignments}"; then
+      "${READ_ELF}" -l "${abi_dir}/libffmpegkit.so" | awk '/LOAD/ { print }' >&2
+      fail "${abi}: libffmpegkit.so does not show 16KB LOAD alignment"
+    fi
   else
     echo "WARN: readelf/llvm-readelf not found; skipped 16KB ELF alignment check." >&2
   fi

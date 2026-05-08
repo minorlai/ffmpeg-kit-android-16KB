@@ -338,7 +338,7 @@ if [ "$GPL_ENABLED" == "yes" ]; then
   CONFIGURE_POSTFIX+=" --enable-gpl"
 fi
 
-export LDFLAGS+=" -L${ANDROID_NDK_ROOT}/platforms/android-${API}/arch-${TOOLCHAIN_ARCH}/usr/lib"
+export LDFLAGS+=" -L${ANDROID_SYSROOT}/usr/lib/${HOST}/${API}"
 
 # LINKING WITH ANDROID LTS SUPPORT LIBRARY IS NECESSARY FOR API < 18
 if [[ -n ${FFMPEG_KIT_LTS_BUILD} ]] && [[ ${API} -lt 18 ]]; then

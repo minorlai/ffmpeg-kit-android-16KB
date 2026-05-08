@@ -23,7 +23,7 @@ jobs:
       run:
         shell: bash
     env:
-      ANDROID_NDK_VERSION: "21.4.7075529"
+      ANDROID_NDK_VERSION: "27.0.12077973"
       ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
       ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
       ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_IN_MEMORY_KEY }}

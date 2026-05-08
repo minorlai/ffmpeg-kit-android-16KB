@@ -921,7 +921,7 @@ create_zlib_system_package_config() {
   cat >"${INSTALL_PKG_CONFIG_DIR}/zlib.pc" <<EOF
 prefix="${ANDROID_SYSROOT}"/usr
 exec_prefix=\${prefix}
-libdir=${ANDROID_NDK_ROOT}/platforms/android-${API}/arch-${TOOLCHAIN_ARCH}/usr/lib
+libdir=${ANDROID_SYSROOT}/usr/lib/${HOST}/${API}
 includedir=\${prefix}/include
 
 Name: zlib

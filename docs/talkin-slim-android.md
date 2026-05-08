@@ -20,12 +20,11 @@ export ANDROID_NDK_ROOT=/path/to/android/ndk
 ./scripts/build-talkin-slim-android.sh --force
 ```
 
-If your local NDK 27+ installation does not contain the legacy `platforms/android-*`
-directories required by this ffmpeg-kit build script, use NDK 21:
+Use NDK 27+ for 16KB page-size aligned FFmpeg shared libraries:
 
 ```bash
 export ANDROID_SDK_ROOT=/Users/allen/Develop/Android/AS_SDK
-export ANDROID_NDK_ROOT=/Users/allen/Develop/Android/AS_SDK/ndk/21.4.7075529
+export ANDROID_NDK_ROOT=/Users/allen/Develop/Android/AS_SDK/ndk/27.0.12077973
 
 bash scripts/build-talkin-slim-android.sh --force
 ```
