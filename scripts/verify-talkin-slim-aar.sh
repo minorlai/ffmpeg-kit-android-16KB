@@ -19,6 +19,45 @@ require_tool() {
   command -v "$1" >/dev/null 2>&1 || fail "Missing required tool: $1"
 }
 
+read_program_headers_wide() {
+  local elf_file="$1"
+
+  if "${READ_ELF}" -W -l "${elf_file}" >/dev/null 2>&1; then
+    "${READ_ELF}" -W -l "${elf_file}"
+    return
+  fi
+
+  if "${READ_ELF}" --wide -l "${elf_file}" >/dev/null 2>&1; then
+    "${READ_ELF}" --wide -l "${elf_file}"
+    return
+  fi
+
+  "${READ_ELF}" -l "${elf_file}"
+}
+
+verify_load_alignment() {
+  local elf_file="$1"
+  local label="$2"
+  local headers
+  local alignments
+
+  headers="$(read_program_headers_wide "${elf_file}")"
+  alignments="$(awk '$1 == "LOAD" { print $NF }' <<<"${headers}")"
+
+  if [[ -z "${alignments}" ]]; then
+    awk '$1 == "LOAD" { print }' <<<"${headers}" >&2
+    fail "${label}: could not parse LOAD segment alignment"
+  fi
+
+  while IFS= read -r alignment; do
+    [[ -n "${alignment}" ]] || continue
+    if (( alignment < 0x4000 )); then
+      awk '$1 == "LOAD" { print }' <<<"${headers}" >&2
+      fail "${label}: LOAD segment alignment is ${alignment}, expected at least 0x4000"
+    fi
+  done <<<"${alignments}"
+}
+
 find_readelf() {
   if command -v llvm-readelf >/dev/null 2>&1; then
     command -v llvm-readelf
@@ -81,18 +120,8 @@ for abi in arm64-v8a armeabi-v7a; do
   strings "${libavcodec}" | grep -Eq "filter_units|remove_types" || fail "${abi}: filter_units bitstream filter symbols were not found in libavcodec.so"
 
   if [[ -n "${READ_ELF}" ]]; then
-    avcodec_load_alignments="$("${READ_ELF}" -l "${libavcodec}" | awk '/LOAD/ { print $NF }')"
-    ffmpegkit_load_alignments="$("${READ_ELF}" -l "${abi_dir}/libffmpegkit.so" | awk '/LOAD/ { print $NF }')"
-
-    if ! grep -Eq "0x4000|16384" <<<"${avcodec_load_alignments}"; then
-      "${READ_ELF}" -l "${libavcodec}" | awk '/LOAD/ { print }' >&2
-      fail "${abi}: libavcodec.so does not show 16KB LOAD alignment"
-    fi
-
-    if ! grep -Eq "0x4000|16384" <<<"${ffmpegkit_load_alignments}"; then
-      "${READ_ELF}" -l "${abi_dir}/libffmpegkit.so" | awk '/LOAD/ { print }' >&2
-      fail "${abi}: libffmpegkit.so does not show 16KB LOAD alignment"
-    fi
+    verify_load_alignment "${libavcodec}" "${abi}: libavcodec.so"
+    verify_load_alignment "${abi_dir}/libffmpegkit.so" "${abi}: libffmpegkit.so"
   else
     echo "WARN: readelf/llvm-readelf not found; skipped 16KB ELF alignment check." >&2
   fi
