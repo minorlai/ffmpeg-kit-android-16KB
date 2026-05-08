@@ -1,21 +1,20 @@
-plugins {
-    id 'com.android.library'
-    id 'com.vanniktech.maven.publish'
-    id 'com.gradleup.nmcp'
-}
+apply plugin: 'com.android.library'
+apply plugin: 'com.vanniktech.maven.publish'
+apply plugin: 'com.gradleup.nmcp'
 
 android {
-    namespace 'com.moizhassan.ffmpeg.ffmpegkit'
-
-    compileSdk COMPILE_SDK_VERSION as int
+    if (project.android.hasProperty("namespace")) {
+        namespace 'com.arthenica.ffmpegkit'
+    }
+    compileSdk 35
     ndkVersion "22.1.7171670"
 
     defaultConfig {
-        minSdk MIN_SDK_VERSION as int
-        targetSdk TARGET_SDK_VERSION as int
-        versionCode VERSION_NUMBER as int
-        versionName VERSION_NAME as String
-        project.archivesBaseName = "ffmpegkit"
+        minSdk 24
+        targetSdk 35
+        versionCode 240612
+        versionName "6.1.2"
+        project.archivesBaseName = "ffmpeg-kit"
         consumerProguardFiles "consumer-rules.pro"
     }
 
@@ -33,7 +32,7 @@ android {
 
     sourceSets {
         main {
-            jniLibs.srcDirs = ["./src/main/libs"]
+            jniLibs.srcDirs = ["../libs"]
         }
     }
 
@@ -43,6 +42,18 @@ android {
             systemProperty 'enable.ffmpeg.kit.test.mode', 'true'
         }
     }
+
+
+    publishing {
+        singleVariant('release') {
+            withJavadocJar()
+            withSourcesJar()
+        }
+    }
+}
+
+mavenPublishing {
+    configure(new com.vanniktech.maven.publish.AndroidSingleVariantLibrary("release", true, true))
 }
 
 task javadoc(type: Javadoc) {

@@ -1,4 +1,6 @@
 apply plugin: 'com.android.library'
+apply plugin: 'com.vanniktech.maven.publish'
+apply plugin: 'com.gradleup.nmcp'
 
 android {
     if (project.android.hasProperty("namespace")) {
@@ -10,8 +12,8 @@ android {
     defaultConfig {
         minSdk 24
         targetSdk 35
-        versionCode 240600
-        versionName "6.0"
+        versionCode 240612
+        versionName "6.1.2"
         project.archivesBaseName = "ffmpeg-kit"
         consumerProguardFiles "consumer-rules.pro"
     }
@@ -48,6 +50,10 @@ android {
             withSourcesJar()
         }
     }
+}
+
+mavenPublishing {
+    configure(new com.vanniktech.maven.publish.AndroidSingleVariantLibrary("release", true, true))
 }
 
 task javadoc(type: Javadoc) {

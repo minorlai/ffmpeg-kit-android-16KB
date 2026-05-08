@@ -5,19 +5,19 @@
 This repo is just to help out by providing a maven build (mainly Android) to folks who are unable to build the 16KB version, as a part of the updates required by Google Play.
 My only contribution is to build the aar/maven package.
 
-To use the library in your project, view the repo page on Maven: [MAVEN CENTRAL](https://central.sonatype.com/artifact/com.moizhassan.ffmpeg/ffmpeg-kit-16kb)
+To use the library in your project, view the repo page on Maven: [MAVEN CENTRAL](https://central.sonatype.com/artifact/io.github.minorlai/ffmpeg-kit-16kb)
 or use in your android gradle:
 
 ```
-implementation 'com.moizhassan.ffmpeg:ffmpeg-kit-16kb:6.1.1' //build.gradle
+implementation 'io.github.minorlai:ffmpeg-kit-16kb:6.1.2' //build.gradle
 
 OR
 
-implementation("com.moizhassan.ffmpeg:ffmpeg-kit-16kb:6.1.1") //build.gradle.kts
+implementation("io.github.minorlai:ffmpeg-kit-16kb:6.1.2") //build.gradle.kts
 
 OR
 
-Download the `ffmpeg-kit-6.1.1.aar` from the repo directly
+Download the `ffmpeg-kit-talkin-slim-16kb.aar` from the repo directly
 
 ```
 
