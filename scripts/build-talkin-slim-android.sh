@@ -19,7 +19,6 @@ fi
   --disable-x86 \
   --disable-x86-64 \
   --disable-arm-v7a-neon \
-  --enable-libiconv \
   --enable-openh264 \
   "$@"
 

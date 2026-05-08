@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # UPDATE BUILD FLAGS
-export CFLAGS="$CFLAGS $(pkg-config --cflags libiconv) $(pkg-config --cflags cpu-features)"
-export LDFLAGS="$LDFLAGS $(pkg-config --libs --static libiconv) $(pkg-config --libs --static cpu-features)"
+export CFLAGS="$CFLAGS $(pkg-config --cflags cpu-features)"
+export LDFLAGS="$LDFLAGS $(pkg-config --libs --static cpu-features)"
 
 # SET BUILD OPTIONS
 case ${ARCH} in

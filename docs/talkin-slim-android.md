@@ -8,7 +8,7 @@ This fork keeps a small 16KB-page-size Android FFmpegKit build for TalkIn video 
 - Disable `armeabi-v7a-neon`, `x86`, and `x86_64`.
 - Keep the 16KB page-size linker flag already present in this fork.
 - Enable `openh264` so FFmpeg can encode browser-playable H.264 without GPL `x264`.
-- Enable `libiconv` because the Android OpenH264 build script links against its pkg-config metadata.
+- Do not enable `libiconv`; this slim build does not need FFmpeg iconv support for MP4/H.264/AAC compression.
 - Keep native FFmpeg filters/bitstream filters, including `filter_units`, for HEVC Dolby Vision RPU cleanup fallback.
 
 ## Build

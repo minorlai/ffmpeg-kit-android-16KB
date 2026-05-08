@@ -57,6 +57,13 @@ jobs:
       - name: build talkin slim aar
         run: bash scripts/build-talkin-slim-android.sh --force
 
+      - name: print build log on failure
+        if: ${{ failure() }}
+        run: |
+          if [ -f build.log ]; then
+            tail -300 build.log
+          fi
+
       - name: verify talkin slim aar
         run: bash scripts/verify-talkin-slim-aar.sh
 
