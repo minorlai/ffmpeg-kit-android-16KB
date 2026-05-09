@@ -2,6 +2,16 @@
 
 > ## **This is for ANDROID ONLY... For the rest of the platforms, feel free to create a PR or fork.**
 
+##只保留了 arm64-v8a、armeabi-v7a两个架构，另外抽取了(只有 libx264 能力)：
+```
+libopenh264
+aac
+mov/mp4/matroska
+mpeg4/hevc/h264 decode
+scale/swscale
+filter_units bsf
+```
+
 This repo is just to help out by providing a maven build (mainly Android) to folks who are unable to build the 16KB version, as a part of the updates required by Google Play.
 My only contribution is to build the aar/maven package.
 
