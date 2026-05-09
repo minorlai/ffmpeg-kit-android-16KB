@@ -2,7 +2,7 @@
 
 > ## **This is for ANDROID ONLY... For the rest of the platforms, feel free to create a PR or fork.**
 
-##只保留了 arm64-v8a、armeabi-v7a两个架构，另外抽取了(只有 libx264 能力)：
+##只保留了 arm64-v8a、armeabi-v7a两个架构，另外抽取了(只有 libx264 能力，目的减少体积大小，目前控制在 35M 左右)：
 ```
 libopenh264
 aac
